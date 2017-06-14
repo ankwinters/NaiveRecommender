@@ -73,19 +73,7 @@ class RecommendSystem:
         self.similar_dict = {}
 
     def compute_similar_matrix(self):
-        # Iterate over all items
-        for item_a in range(0, self.total_items):
-            for item_b in range(item_a, self.total_items):
-                # Compute similarity between item_a and item_b
-                cos_ab = self.measure.sim_cosine(item1=item_a, item2=item_b)
-                # Fill into the similarity matrix
-                self.sim_matrix[item_a, item_b] = cos_ab
-                self.sim_matrix[item_b, item_a] = cos_ab
-                print("pair %s %s done" % (item_a, item_b))
-        # Invalidate diagnol entries
-        for i in range(0, self.total_items):
-            self.sim_matrix[i, i] = 0.0
-
+        self.sim_matrix = self.measure.sim_cosine()
         with open("sim_matrix.txt", 'wb') as f:
             np.savetxt(f, self.sim_matrix, "%f")
 
@@ -136,6 +124,31 @@ class SimilarityMeasure:
         self.user_mean = []
         self.compute_user_mean()
 
+    # Directly compute similarity matrix
+    def sim_cosine(self):
+        similar_matrix = np.dot(self.prefs.T, self.prefs)
+        similar_matrix = similar_matrix.astype(np.float64)
+        items = similar_matrix.shape[0]
+        # Compute norm for each items
+        for i in range(0, items):
+            similar_matrix[i, i] = sqrt(similar_matrix[i, i])
+        for id1 in range(0, items):
+            x = similar_matrix[id1, id1]
+            for id2 in range(id1, items):
+                y = similar_matrix[id2, id2]
+                xy = similar_matrix[id1, id2]
+                if x * y == 0:
+                    cos = 0.0
+                else:
+                    cos = float(xy) / (x * y)
+                similar_matrix[id1, id2] = cos
+                similar_matrix[id2, id1] = cos
+        # Set to 0
+        for i in range(0, items):
+            similar_matrix[i, i] = 0
+        return similar_matrix
+
+    # Use adjusted cosine similarity measurement
     def compute_user_mean(self):
         total_users = self.prefs.shape[0]
         for user_id in range(0, total_users):
@@ -150,22 +163,6 @@ class SimilarityMeasure:
             mean = total_rating/rated_num
             self.user_mean.append(mean)
 
-    def sim_cosine(self, item1, item2):
-        total_users = self.prefs.shape[0]
-        # Get rating vector
-        item1_rating = self.prefs[:, item1].reshape(total_users, 1)
-        item2_rating = self.prefs[:, item2].reshape(total_users, 1)
-        # Compute cosine
-        xy = sum(item1_rating*item2_rating)
-        x = np.linalg.norm(item1_rating)
-        y = np.linalg.norm(item2_rating)
-        if x == 0 or y == 0:
-            return 0
-        cos = float(xy) / (x * y)
-        return cos
-
-    # Use adjusted cosine similarity measurement
-
     def sim_cosine_adjusted(self, item1, item2):
         total_users = self.prefs.shape[0]
         # Get rating vector
@@ -178,8 +175,8 @@ class SimilarityMeasure:
                 item1_rating[index] = 0
                 item2_rating[index] = 0
         # Subtract each user's mean rating
-        item1_rating.dtype = "float64"
-        item2_rating.dtype = "float64"
+        item1_rating = item1_rating.astype(np.float64)
+        item2_rating = item2_rating.astype(np.float64)
         for user_id, rate in enumerate(item1_rating):
             # Skip invalid rating for item
             if rate == 0:
@@ -210,13 +207,13 @@ if __name__ == "__main__":
     recommender_io = RecommendSystemIo()
     recommender_io.read_file("./train_all_txt.txt")
     run_system = RecommendSystem(recommender_io.matrix)
-    #run_system.compute_similar_matrix()
-    run_system.load_similarity_matrix()
-    run_system.get_most_similar_items(100)
-    run_system.fill_recommendation_matrix()
+    run_system.compute_similar_matrix()
+    #run_system.load_similarity_matrix()
+    #run_system.get_most_similar_items(100)
+    #run_system.fill_recommendation_matrix()
 
-    recommender_io.matrix = run_system.recommendation_matrix
-    recommender_io.write_file("output_all.txt")
+    #recommender_io.matrix = run_system.recommendation_matrix
+    #recommender_io.write_file("output_all.txt")
 
 
     #print(sim.sim_cosine(5,5))

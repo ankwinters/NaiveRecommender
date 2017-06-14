@@ -97,11 +97,17 @@ class RecommendSystem:
         similar_items = self.similar_dict[item_col]
         total_score = 0
         total_sim = 0
+        ranked_items = 0
         for sim_col in similar_items:
             score = self.measure.prefs[user_row, sim_col]
+            if score == 0:
+                continue
             similarity = self.sim_matrix[item_col, sim_col]
             total_score += score * similarity
             total_sim += similarity
+            ranked_items += 1
+            if ranked_items == 3:
+                break
         if total_sim == 0:
             return 0
         else:
@@ -110,10 +116,10 @@ class RecommendSystem:
     def fill_recommendation_matrix(self):
         # Enumerate original preference matrix
         for row, line in enumerate(self.measure.prefs):
+            print("Fill data for user:", row)
             for column, value in enumerate(line):
                 if value == 0:
                     val = self.get_recommendation_value(row, column)
-                    print("Fill (", row, ",", column,") with missing data:",val)
                     self.recommendation_matrix[row, column] = round(val)
 
 
@@ -164,44 +170,7 @@ class SimilarityMeasure:
             self.user_mean.append(mean)
 
     def sim_cosine_adjusted(self, item1, item2):
-        total_users = self.prefs.shape[0]
-        # Get rating vector
-        item1_rating = self.prefs[:, item1].reshape(total_users, 1)
-        item2_rating = self.prefs[:, item2].reshape(total_users, 1)
-        # Get ratings in common
-        common_rating = item1_rating*item2_rating
-        for index, rate in enumerate(common_rating):
-            if rate == 0:
-                item1_rating[index] = 0
-                item2_rating[index] = 0
-        # Subtract each user's mean rating
-        item1_rating = item1_rating.astype(np.float64)
-        item2_rating = item2_rating.astype(np.float64)
-        for user_id, rate in enumerate(item1_rating):
-            # Skip invalid rating for item
-            if rate == 0:
-                continue
-            # Subtract mean rating
-            mean = self.user_mean[user_id]
-            item1_rating[user_id] -= mean
-        # Subtract each user's mean rating
-        for user_id, rate in enumerate(item2_rating):
-            # Skip invalid rating for item
-            if rate == 0:
-                continue
-            # Subtract mean rating
-            mean = self.user_mean[user_id]
-            item2_rating[user_id] -= mean
-        # Compute cosine
-        xy = sum(item1_rating * item2_rating)
-        x = np.linalg.norm(item1_rating)
-        y = np.linalg.norm(item2_rating)
-        if x == 0 or y == 0:
-            return 0
-        cos = float(xy) / (x * y)
-        return cos
-
-
+        pass
 
 if __name__ == "__main__":
     recommender_io = RecommendSystemIo()

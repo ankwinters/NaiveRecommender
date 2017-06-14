@@ -125,6 +125,7 @@ class RecommendSystem:
             for column, value in enumerate(line):
                 if value == 0:
                     val = self.get_recommendation_value(row, column)
+                    print("Fill (", row, ",", column,") with missing data:",val)
                     self.recommendation_matrix[row, column] = round(val)
 
 
@@ -136,7 +137,7 @@ class SimilarityMeasure:
         self.compute_user_mean()
 
     def compute_user_mean(self):
-        total_users = self.prefs.s/home/ankhape[0]
+        total_users = self.prefs.shape[0]
         for user_id in range(0, total_users):
             rated_num = 0
             total_rating = 0
@@ -211,10 +212,10 @@ if __name__ == "__main__":
     run_system = RecommendSystem(recommender_io.matrix)
     #run_system.compute_similar_matrix()
     run_system.load_similarity_matrix()
-    run_system.get_most_similar_items(500)
+    run_system.get_most_similar_items(100)
     run_system.fill_recommendation_matrix()
 
-    recommender_io.matrix = run_system.measure.prefs
+    recommender_io.matrix = run_system.recommendation_matrix
     recommender_io.write_file("output_all.txt")
 
 

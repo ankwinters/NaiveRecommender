@@ -68,6 +68,7 @@ class RecommendSystem:
         self.total_users = pref_matrix.shape[0]
         self.total_items = pref_matrix.shape[1]
         # Initialize similarity matrix
+        self.recommendation_matrix = pref_matrix
         self.sim_matrix = np.zeros((self.total_items, self.total_items), dtype=np.float64)
         self.similar_dict = {}
 
@@ -119,12 +120,12 @@ class RecommendSystem:
             return total_score / total_sim
 
     def fill_recommendation_matrix(self):
-        self.recommendation_matrix 
+        # Enumerate original preference matrix
         for row, line in enumerate(self.measure.prefs):
             for column, value in enumerate(line):
                 if value == 0:
                     val = self.get_recommendation_value(row, column)
-                    self.measure.prefs[row, column] = round(val)
+                    self.recommendation_matrix[row, column] = round(val)
 
 
 # ------------ Item-based similarity measurement-------------------
@@ -135,7 +136,7 @@ class SimilarityMeasure:
         self.compute_user_mean()
 
     def compute_user_mean(self):
-        total_users = self.prefs.shape[0]
+        total_users = self.prefs.s/home/ankhape[0]
         for user_id in range(0, total_users):
             rated_num = 0
             total_rating = 0

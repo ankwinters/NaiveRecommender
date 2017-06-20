@@ -1,6 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+"""
+Copyright (c) 2017,  Kangping Chen
 
-
+"""
 import numpy as np
 from operator import itemgetter
 from math import sqrt
@@ -28,9 +30,6 @@ class RecommendSystemIo:
             for item in self.items:
                 line = item[0]+" "+item[1]+" "+item[2]+"\n"
                 f.write(line)
-
-    def fill_the_blanks(self):
-        pass
 
     # ----------- Don't call them explicitly -------
     def items_to_matrix(self):
@@ -72,13 +71,13 @@ class RecommendSystem:
         self.sim_matrix = np.zeros((self.total_items, self.total_items), dtype=np.float64)
         self.similar_dict = {}
 
-    def compute_similar_matrix(self):
+    def compute_similar_matrix(self, sim_file=".cosine_similarity.txt"):
         self.sim_matrix = self.measure.sim_cosine()
-        with open("sim_matrix.txt", 'wb') as f:
+        with open(sim_file, 'wb') as f:
             np.savetxt(f, self.sim_matrix, "%f")
 
 # ------------ Get similarity matrix from file-------------------------
-    def load_similarity_matrix(self, sim_file="cosine_similarity.txt"):
+    def load_similarity_matrix(self, sim_file=".cosine_similarity.txt"):
         with open(sim_file, 'r') as f:
             self.sim_matrix = np.loadtxt(f)
 
@@ -106,6 +105,7 @@ class RecommendSystem:
             total_score += score * similarity
             total_sim += similarity
             ranked_items += 1
+            # Use at most 3 items
             if ranked_items == 3:
                 break
         if total_sim == 0:
@@ -121,7 +121,6 @@ class RecommendSystem:
                 if value == 0:
                     val = self.get_recommendation_value(row, column)
                     self.recommendation_matrix[row, column] = round(val)
-
 
 # ------------ Item-based similarity measurement-------------------
 class SimilarityMeasure:
@@ -177,12 +176,12 @@ if __name__ == "__main__":
     recommender_io.read_file("./train_all_txt.txt")
     run_system = RecommendSystem(recommender_io.matrix)
     run_system.compute_similar_matrix()
-    #run_system.load_similarity_matrix()
-    #run_system.get_most_similar_items(100)
-    #run_system.fill_recommendation_matrix()
+    run_system.load_similarity_matrix()
+    run_system.get_most_similar_items(100)
+    run_system.fill_recommendation_matrix()
 
-    #recommender_io.matrix = run_system.recommendation_matrix
-    #recommender_io.write_file("output_all.txt")
+    recommender_io.matrix = run_system.recommendation_matrix
+    recommender_io.write_file("output_all.txt")
 
 
     #print(sim.sim_cosine(5,5))
